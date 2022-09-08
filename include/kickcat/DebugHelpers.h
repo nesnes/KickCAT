@@ -8,7 +8,7 @@ namespace kickcat
 {
 
     template<typename T>
-    void sendGetRegister(Bus bus, uint16_t slave_address, uint16_t reg_address, T& value_read)
+    void sendGetRegister(Link& link, uint16_t slave_address, uint16_t reg_address, T& value_read)
     {
         auto process = [&value_read](DatagramHeader const*, uint8_t const* data, uint16_t wkc)
         {
@@ -26,19 +26,19 @@ namespace kickcat
             THROW_ERROR("Error while trying to get slave register.");
         };
 
-        bus.link_.addDatagram(Command::FPRD, createAddress(slave_address, reg_address), nullptr, sizeof(value_read), process, error);
-        bus.link_.processDatagrams();
+        link.addDatagram(Command::FPRD, createAddress(slave_address, reg_address), nullptr, sizeof(value_read), process, error);
+        link.processDatagrams();
     }
 
-    void sendGetRegister(Bus bus, uint16_t slave_address, uint16_t reg_address, uint16_t value_read)
+    void sendGetRegister(Link& link, uint16_t slave_address, uint16_t reg_address, uint16_t value_read)
     {
-        sendGetRegister<uint16_t>(bus, slave_address, reg_address, value_read)
+        sendGetRegister<uint16_t>(link, slave_address, reg_address, value_read);
     }
 
     template<typename T>
-    void sendWriteRegister(Bus bus, uint16_t slave_address, uint16_t reg_address, T& value_write)
+    void sendWriteRegister(Link& link, uint16_t slave_address, uint16_t reg_address, T& value_write)
     {
-        auto process = [&value_read](DatagramHeader const*, uint8_t const* data, uint16_t wkc)
+        auto process = [&value_write](DatagramHeader const*, uint8_t const* data, uint16_t wkc)
         {
             if (wkc != 1)
             {
@@ -52,8 +52,13 @@ namespace kickcat
             THROW_ERROR("Error while trying to set slave register.");
         };
 
-        bus.link_.addDatagram(Command::FPWR, createAddress(slave_address, reg_address), value_write, sizeof(value_write), process, error);
-        bus.link_.processDatagrams();
+        link.addDatagram(Command::FPWR, createAddress(slave_address, reg_address), value_write, sizeof(value_write), process, error);
+        link.processDatagrams();
+    }
+
+    void sendWriteRegister(Link& link, uint16_t slave_address, uint16_t reg_address, uint16_t value_write)
+    {
+        sendWriteRegister<uint16_t>(link, slave_address, reg_address, value_write);
     }
 }
 
