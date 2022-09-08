@@ -2,7 +2,6 @@
 #include <cstring>
 
 #include "kickcat/Link.h"
-#include "kickcat/DebugHelpers.h"
 #include "Mocks.h"
 
 using ::testing::Return;
@@ -372,23 +371,4 @@ TEST_F(LinkTest, process_datagrams_old_frame)
 
     ASSERT_EQ(1, process_callback_counter); // datagram lost (invalid frame)
     ASSERT_EQ(2, error_callback_counter);
-}
-
-TEST_F(LinkTest, send_get_register)
-{
-    uint16_t value_read;
-
-    EXPECT_CALL(*io, read(_,_))
-    .WillOnce(Invoke([](uint8_t* data, int32_t)
-    {
-        Frame frame;
-        //frame.addDatagram(2, Command::BRD,  0, nullptr, 1);
-        frame.addDatagram(2, Command::FPRD,  0, nullptr, 2);
-        int32_t toWrite = frame.finalize();
-        std::memcpy(data, frame.data(), toWrite);
-        return toWrite;
-    }));
-
-    sendGetRegister(link, 0x00, 0x110, value_read);
-    printf("%08x", value_read);
 }

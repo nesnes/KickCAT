@@ -52,7 +52,7 @@ namespace kickcat
             THROW_ERROR("Error while trying to set slave register.");
         };
 
-        link.addDatagram(Command::FPWR, createAddress(slave_address, reg_address), value_write, sizeof(value_write), process, error);
+        link.addDatagram(Command::FPWR, createAddress(slave_address, reg_address), value_write, process, error);
         link.processDatagrams();
     }
 

@@ -52,6 +52,7 @@ endif()
 
 if (GTest_FOUND)
   add_executable(kickcat_unit unit/bus-t.cc
+                              unit/debug-t.cc
                               unit/diagnostics-t.cc
                               unit/frame-t.cc
                               unit/link-t.cc
