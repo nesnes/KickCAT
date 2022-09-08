@@ -2,7 +2,6 @@
 #define KICKCAT_DEBUGHELPERS_H
 
 #include "Link.h"
-#include "Bus.h"
 
 namespace kickcat
 {
@@ -26,19 +25,19 @@ namespace kickcat
             THROW_ERROR("Error while trying to get slave register.");
         };
 
-        link.addDatagram(Command::FPRD, createAddress(slave_address, reg_address), nullptr, sizeof(value_read), process, error);
+        link.addDatagram(Command::FPRD, createAddress(slave_address, reg_address), nullptr, process, error);
         link.processDatagrams();
     }
 
-    void sendGetRegister(Link& link, uint16_t slave_address, uint16_t reg_address, uint16_t value_read)
+    void sendGetRegister(Link& link, uint16_t slave_address, uint16_t reg_address, uint16_t& value_read)
     {
         sendGetRegister<uint16_t>(link, slave_address, reg_address, value_read);
     }
 
     template<typename T>
-    void sendWriteRegister(Link& link, uint16_t slave_address, uint16_t reg_address, T& value_write)
+    void sendWriteRegister(Link& link, uint16_t slave_address, uint16_t reg_address, T value_write)
     {
-        auto process = [&value_write](DatagramHeader const*, uint8_t const* data, uint16_t wkc)
+        auto process = [&value_write](DatagramHeader const*, uint8_t const*, uint16_t wkc)
         {
             if (wkc != 1)
             {

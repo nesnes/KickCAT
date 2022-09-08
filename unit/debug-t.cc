@@ -12,25 +12,18 @@ using ::testing::InSequence;
 
 using namespace kickcat;
 
-class LinkTest : public testing::Test
+struct SDOAnswer
+{
+    mailbox::Header header;
+    mailbox::ServiceData sdo;
+    uint8_t payload[4];
+} __attribute__((__packed__));
+
+class FullLink : public testing::Test
 {
 public:
-    void checkSendFrame(int32_t datagrams_number)
-    {
-        EXPECT_CALL(*io, write(_,_))
-        .WillOnce(Invoke([this, datagrams_number](uint8_t const* data, int32_t data_size)
-        {
-            int32_t available_datagrams = 0;
-            Frame frame(data, data_size);
-            while (frame.isDatagramAvailable())
-            {
-                (void)frame.nextDatagram();
-                available_datagrams++;
-            }
-            EXPECT_EQ(datagrams_number, available_datagrams);
-            return data_size;
-        }));
-    }
+
+
 
     template<typename T>
     void handleReply(std::vector<T> answers, uint16_t replied_wkc = 1)
@@ -62,24 +55,78 @@ public:
     }
 
     template<typename T>
-    void addDatagram(enum Command command, uint32_t address, void const* data, uint16_t data_size,
-                           std::function<DatagramState(DatagramHeader const*, uint8_t const* data, uint16_t wkc)> const& process,
-                           std::function<void(DatagramState const& state)> const& error)
+    void checkSendFrame(Command cmd, T to_check, bool check_payload = true)
     {
-        link.addDatagram(command, address, &data, sizeof(data), process, error);
+        EXPECT_CALL(*io, write(_,_))
+        .WillOnce(Invoke([this, cmd, to_check, check_payload](uint8_t const* data, int32_t data_size)
+        {
+            // store datagram to forge the answer.
+            Frame frame(data, data_size);
+            inflight = std::move(frame);
+            datagram = inflight.data() + sizeof(EthernetHeader) + sizeof(EthercatHeader);
+            header = reinterpret_cast<DatagramHeader*>(datagram);
+            payload = datagram + sizeof(DatagramHeader);
+
+            if (check_payload)
+            {
+                EXPECT_EQ(0, std::memcmp(payload, &to_check, sizeof(T)));
+            }
+
+            EXPECT_EQ(cmd, header->command);
+            return data_size;
+        }));
     }
+
+    void checkSendFrame(Command cmd)
+    {
+        uint8_t skip = 0;
+        checkSendFrame(cmd, skip, false);
+    }
+
 
 protected:
     std::shared_ptr<MockSocket> io{ std::make_shared<MockSocket>() };
     Link link{ io };
+    Frame inflight;
+
+    uint8_t* datagram;
+    DatagramHeader* header;
+    uint8_t* payload;
 };
 
-TEST_F(LinkTest, send_get_register)
+TEST_F(FullLink, send_get_register)
 {
-    uint16_t value_read;
-
-    handleReply<uint8_t>({0x})
-
+    //Succesful read
+    uint16_t value_read = 1;
+    checkSendFrame(Command::FPRD);
+    handleReply<uint16_t>({0xFF}, 1);
     sendGetRegister(link, 0x00, 0x110, value_read);
-    printf("%08x", value_read);
+    ASSERT_EQ(value_read, 0xFF);
+
+    //Invalid WKC
+    checkSendFrame(Command::FPRD);
+    handleReply<uint16_t>({0xFF}, 2);
+
+    ASSERT_THROW(sendGetRegister(link, 0x00, 0x110, value_read), Error);
+}
+
+TEST_F(FullLink, send_write_register)
+{
+    // Succesful write
+    checkSendFrame(Command::FPWR);
+    handleReply<uint8_t>({0}, 1);
+    sendWriteRegister(link, 0x00, 0x110, 0x00);
+
+    //Invalid WKC
+    uint16_t value_write = 0x00;
+    checkSendFrame(Command::FPWR);
+    handleReply<uint16_t>({0xFF}, 2);
+    ASSERT_THROW(sendWriteRegister(link, 0x00, 0x110, value_write), Error);
+
+    //Closed socket
+    io->close();
+    checkSendFrame(Command::FPWR);
+    handleReply<uint16_t>({0xFF}, 2);
+    ASSERT_THROW(sendWriteRegister(link, 0x00, 0x110, value_write), Error);
+
 }
