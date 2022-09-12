@@ -55,6 +55,12 @@ namespace kickcat
             printf( "device_order_id: %i \n",           general_entry->device_order_id);
             printf( "device_name_id: %i \n",            general_entry->device_name_id);
             printf( "reserved_A: %i \n",                general_entry->reserved_A);
+            printf( "SDO_set: %i \n",                   general_entry->SDO_set);
+            printf( "SDO_info: %i \n",                  general_entry->SDO_info);
+            printf( "PDO_assign: %i \n",                general_entry->PDO_assign);
+            printf( "PDO_configuration: %i \n",         general_entry->PDO_configuration);
+            printf( "PDO_upload: %i \n",                general_entry->PDO_upload);
+            printf( "SDO_complete_access: %i \n",       general_entry->SDO_complete_access);
             printf( "FoE_details: %i \n",               general_entry->FoE_details);
             printf( "EoE_details: %i \n",               general_entry->EoE_details);
             printf( "SoE_channels: %i \n",              general_entry->SoE_channels);

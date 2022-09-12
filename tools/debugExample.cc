@@ -40,6 +40,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+
+    // This register has to be R/W on the device
     sendWriteRegister<uint8_t>(link, 0x00, 0x800, 0x0000);
 
     uint16_t value_read;

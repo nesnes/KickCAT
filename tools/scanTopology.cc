@@ -1,6 +1,7 @@
 #include "kickcat/Bus.h"
 #include "kickcat/Diagnostics.h"
 #include "kickcat/protocol.h"
+#include "kickcat/Prints.h"
 
 #ifdef __linux__
     #include "kickcat/OS/Linux/Socket.h"
@@ -43,6 +44,20 @@ int main(int argc, char* argv[])
         socket->open(argv[1], 2ms);
         bus.init();
 
+        Slave& pelvis = bus.slaves().at(0);
+        pelvis.is_static_mapping = true;
+        pelvis.input.bsize = 356;
+        pelvis.output.bsize = 8;
+        pelvis.input.sync_manager = 2;
+        pelvis.output.sync_manager = 1;
+
+        Slave& ankle = bus.slaves().at(1);
+        ankle.is_static_mapping = true;
+        ankle.input.bsize = 114;
+        ankle.output.bsize = 4;
+        ankle.input.sync_manager = 2;
+        ankle.output.sync_manager = 1;
+
         print_current_state();
 
         bus.createMapping(io_buffer);
@@ -75,8 +90,8 @@ int main(int argc, char* argv[])
 
     try
     {
-        bus.requestState(State::OPERATIONAL);
-        bus.waitForState(State::OPERATIONAL, 100ms);
+        //bus.requestState(State::OPERATIONAL);
+        //bus.waitForState(State::OPERATIONAL, 100ms);
         print_current_state();
     }
     catch (ErrorCode const& e)
@@ -97,7 +112,7 @@ int main(int argc, char* argv[])
         bus.sendGetDLStatus(slave);
         bus.finalizeDatagrams();
 
-        slave.printDLStatus();
+        printDLStatus(slave);
     }
 
     std::unordered_map<uint16_t, uint16_t> topology = getTopology(bus.slaves());

@@ -13,6 +13,7 @@ set(LIB_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Frame.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Link.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Mailbox.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/Prints.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/protocol.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Slave.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Time.cc
