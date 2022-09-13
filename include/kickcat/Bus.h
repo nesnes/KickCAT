@@ -76,7 +76,7 @@ namespace kickcat
         void processDataReadWrite(std::function<void(DatagramState const&)> const& error);
 
         void checkMailboxes( std::function<void(DatagramState const&)> const& error);
-        void processMessages(std::function<void(DatagramState const&)> const& error);     
+        void processMessages(std::function<void(DatagramState const&)> const& error);
 
 
         enum Access

@@ -43,29 +43,23 @@ int main(int argc, char* argv[])
     {
         socket->open(argv[1], 2ms);
         bus.init();
+
+        printInfo(bus.slaves().at(2));
         
         Slave& pelvis = bus.slaves().at(0);
         pelvis.is_static_mapping = true;
         pelvis.input.bsize = 356;
-        pelvis.output.bsize = 8;
         pelvis.input.sync_manager = 3;
+        pelvis.output.bsize = 8;
         pelvis.output.sync_manager = 2;
 
-        Slave& leftAnkle = bus.slaves().at(7);
-        leftAnkle.is_static_mapping = true;
-        leftAnkle.input.bsize = 114;
-        leftAnkle.output.bsize = 4;
-        leftAnkle.input.sync_manager = 3;
-        leftAnkle.output.sync_manager = 2;
-        print_current_state();
-
-        Slave& rightAnkle = bus.slaves().at(14);
+        Slave& rightAnkle = bus.slaves().at(2);
         rightAnkle.is_static_mapping = true;
         rightAnkle.input.bsize = 114;
-        rightAnkle.output.bsize = 4;
         rightAnkle.input.sync_manager = 3;
+        rightAnkle.output.bsize = 4;
         rightAnkle.output.sync_manager = 2;
-        print_current_state();
+
 
         bus.createMapping(io_buffer);
 

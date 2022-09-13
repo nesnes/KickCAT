@@ -20,3 +20,14 @@ set_target_properties(scanTopology PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
+set(EXAMPLE_SRCS ./moveElmo/moveElmo.cc)
+
+add_executable(moveElmo ${EXAMPLE_SRCS} ${OS_SRCS})
+target_link_libraries(moveElmo kickcat)
+set_target_properties(moveElmo PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+    POSITION_INDEPENDENT_CODE ON
+)
+

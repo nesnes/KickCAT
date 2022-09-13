@@ -285,6 +285,7 @@ namespace kickcat
             {
                 slave.input.size  = slave.input.bsize  * 8;
                 slave.output.size = slave.output.bsize * 8;
+
                 continue;
             }
 
