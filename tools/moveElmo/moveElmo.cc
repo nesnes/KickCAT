@@ -100,10 +100,82 @@ int main(int argc, char* argv[])
 
 
     Slave& elmo = bus.slaves().at(1);
-    wdc::hal::CANOpenStateMachine elmo_CAN;
+    
+    uint16_t status;
+    uint32_t status_length = sizeof(status);
+    bus.readSDO(elmo, 0x6041, 0, Bus::Access::PARTIAL, &status, &status_length);
+    printf("%04x\n", status);
 
-    elmo_CAN.update((uint16_t) wdc::hal::CANOpenCommand::ENABLE);
-    printf("%i\n", elmo_CAN.getMotorState());
+
+
+    uint16_t control_word = wdc::hal::control::word::SHUTDOWN;
+    bus.writeSDO(elmo, 0x6040, 0, Bus::Access::PARTIAL, &control_word, sizeof(control_word));
+
+    control_word = wdc::hal::control::word::SWITCH_ON_OR_DISABLE_OPERATION;
+    bus.writeSDO(elmo, 0x6040, 0, Bus::Access::PARTIAL, &control_word, sizeof(control_word));
+
+    control_word = wdc::hal::control::word::ENABLE_OPERATION;
+    bus.writeSDO(elmo, 0x6040, 0, Bus::Access::PARTIAL, &control_word, sizeof(control_word));
+
+    bus.readSDO(elmo, 0x6041, 0, Bus::Access::PARTIAL, &status, &status_length);
+    printf("%04x\n", status);
+
+    printf("%i\n", (status & wdc::hal::status::value::READY_TO_SWITCH_ON_STATE) == wdc::hal::status::value::READY_TO_SWITCH_ON_STATE);
+    printf("%i\n", (status & wdc::hal::status::value::ON_STATE) == wdc::hal::status::value::ON_STATE);
+    printf("%i\n", (status & wdc::hal::status::value::FAULT_STATE) == wdc::hal::status::value::FAULT_STATE);
+
+    return 1;
+    int64_t last_error = 0;
+    for (int64_t i = 0; i < 10; ++i)
+    {
+        sleep(1ms);
+
+        try
+        {
+            nanoseconds t1 = since_epoch();
+            bus.sendLogicalRead(callback_error);
+            bus.sendLogicalWrite(callback_error);
+            bus.sendRefreshErrorCounters(callback_error);
+            bus.sendMailboxesReadChecks(callback_error);
+            bus.sendMailboxesWriteChecks(callback_error);
+            bus.sendReadMessages(callback_error);
+            bus.sendWriteMessages(callback_error);
+            bus.finalizeDatagrams();
+            nanoseconds t2 = since_epoch();
+
+
+            nanoseconds t3 = since_epoch();
+            bus.processAwaitingFrames();
+            nanoseconds t4 = since_epoch();
+
+            for (int32_t j = 0;  j < elmo.input.bsize; ++j)
+            {
+                printf("%02x ", elmo.input.data[j]);
+            }
+            printf("\n");
+
+            // blink a led - EasyCAT example for Arduino
+            if ((i % 50) < 25)
+            {
+                elmo.output.data[0] = 1;
+            }
+            else
+            {
+                elmo.output.data[0] = 0;
+            }
+
+            if ((i % 1000) == 0)
+            {
+                printErrorCounters(elmo);
+            }
+        }
+        catch (std::exception const& e)
+        {
+            int64_t delta = i - last_error;
+            last_error = i;
+            std::cerr << e.what() << " at " << i << " delta: " << delta << std::endl;
+        }
+    }
 
 
     return 0;
