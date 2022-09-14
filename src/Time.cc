@@ -18,4 +18,20 @@ namespace kickcat
     {
         return since_epoch() - start;
     }
+
+    nanoseconds getElapsedTime(nanoseconds startTime)
+    {
+        return (getCurrentTime() - startTime);
+    }
+
+
+    nanoseconds getCurrentTime()
+    {
+#ifdef WDC_TARGET_GAZEBO
+        return getCurrentSharedTime();
+#else
+        auto now = time_point_cast<nanoseconds>(system_clock::now());
+        return now.time_since_epoch();
+#endif
+    }
 }

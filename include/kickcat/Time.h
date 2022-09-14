@@ -14,6 +14,10 @@ namespace kickcat
     nanoseconds since_epoch();
 
     nanoseconds elapsed_time(nanoseconds start = since_epoch());
+
+    nanoseconds getElapsedTime(nanoseconds startTime);
+
+    nanoseconds getCurrentTime();
 }
 
 #endif
