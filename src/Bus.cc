@@ -432,7 +432,7 @@ namespace kickcat
             {
                 if (wkc != pi_frame.inputs.size())
                 {
-                    DEBUG_PRINT("Invalid working counter\n");
+                    DEBUG_PRINT("sendLogicalRead - Invalid working counter\n");
                     return DatagramState::INVALID_WKC;
                 }
 
@@ -469,7 +469,7 @@ namespace kickcat
             {
                 if (wkc != pi_frame.outputs.size())
                 {
-                    DEBUG_PRINT("Invalid working counter\n");
+                    DEBUG_PRINT("sendLogicalWrite- Invalid working counter\n");
                     return DatagramState::INVALID_WKC;
                 }
                 return DatagramState::OK;
@@ -500,7 +500,7 @@ namespace kickcat
             {
                 if (wkc != pi_frame.inputs.size())
                 {
-                    DEBUG_PRINT("Invalid working counter\n");
+                    DEBUG_PRINT("sendLogicalReadWrite - Invalid working counter\n");
                     return DatagramState::INVALID_WKC;
                 }
 
@@ -766,7 +766,7 @@ namespace kickcat
         {
             if (wkc != 1)
             {
-                DEBUG_PRINT("Invalid working counter\n");
+                DEBUG_PRINT("sendMailboxesReadCheck - Invalid working counter\n");
                 return stable_value;
             }
             return ((state & 0x08) == 0x08);
@@ -794,7 +794,7 @@ namespace kickcat
         {
             if (wkc != 1)
             {
-                DEBUG_PRINT("Invalid working counter\n");
+                DEBUG_PRINT("sendMailboxesWriteChecks - Invalid working counter\n");
                 return stable_value;
             }
             return ((state & 0x08) == 0x08);
@@ -830,7 +830,7 @@ namespace kickcat
         {
             if (wkc != 1)
             {
-                DEBUG_PRINT("Invalid working counter\n");
+                DEBUG_PRINT("sendWriteMessages - Invalid working counter\n");
                 return DatagramState::INVALID_WKC;
             }
             return DatagramState::OK;
@@ -857,13 +857,13 @@ namespace kickcat
             {
                 if (wkc != 1)
                 {
-                    DEBUG_PRINT("Invalid working counter for slave %d\n", slave.address);
+                    DEBUG_PRINT("sendReadMessages - Invalid working counter for slave %d\n", slave.address);
                     return DatagramState::INVALID_WKC;
                 }
 
                 if (not slave.mailbox.receive(data))
                 {
-                    DEBUG_PRINT("Slave %d: receive a message but didn't process it\n", slave.address);
+                    DEBUG_PRINT("sendReadMessages - Slave %d: receive a message but didn't process it\n", slave.address);
                     return DatagramState::NO_HANDLER;
                 }
 
@@ -912,7 +912,7 @@ namespace kickcat
         uint16_t wkc = broadcastWrite(reg::ERROR_COUNTERS, clear_param, 20);
         if (wkc != slaves_.size())
         {
-            THROW_ERROR("Invalid working counter");
+            THROW_ERROR("clearErrorCounters - Invalid working counter");
         }
     }
 
@@ -924,7 +924,7 @@ namespace kickcat
             {
                 if (wkc != 1)
                 {
-                    DEBUG_PRINT("Invalid working counter for slave %d\n", slave.address);
+                    DEBUG_PRINT("sendRefreshErrorCounters - Invalid working counter for slave %d\n", slave.address);
                     return DatagramState::INVALID_WKC;
                 }
 
