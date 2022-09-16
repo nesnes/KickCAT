@@ -5,6 +5,7 @@
 #include "kickcat/Bus.h"
 #include "kickcat/Prints.h"
 #include "ElmoProtocol.h"
+#include "Error.h"
 
 #ifdef __linux__
     #include "kickcat/OS/Linux/Socket.h"
@@ -21,16 +22,16 @@ auto callback_error = [](DatagramState const&){THROW_ERROR("Something bad happen
 
 void printInputPDO(hal::pdo::elmo::Input* inputPDO)
 {
-    printf("statusWord :        %04x\n", inputPDO->statusWord);
-    printf("modeOfOperation :   %i\n", inputPDO->modeOfOperationDisplay);
-    printf("actualPosition:     %i\n", inputPDO->actualPosition);
-    printf("actualVelocity :    %i\n", inputPDO->actualVelocity);
-    printf("demandTorque :      %i\n", inputPDO->demandTorque);
-    printf("actualTorque :      %i\n", inputPDO->actualTorque);  ///< Actual torque in RTU.
-    printf("dcVoltage:          %i\n", inputPDO->dcVoltage);
-    printf("digitalInput :      %i\n",  inputPDO->digitalInput);
-    printf("analogInput :       %i\n",  inputPDO->analogInput);
-    printf("demandPosition :    %i\n", inputPDO->demandPosition);
+    printf("statusWord :        %04x            \n", inputPDO->statusWord);
+    printf("modeOfOperation :   %i              \n", inputPDO->modeOfOperationDisplay);
+    printf("actualPosition:     %i              \n", inputPDO->actualPosition);
+    printf("actualVelocity :    %i              \n", inputPDO->actualVelocity);
+    printf("demandTorque :      %i              \n", inputPDO->demandTorque);
+    printf("actualTorque :      %i              \n", inputPDO->actualTorque);  ///< Actual torque in RTU.
+    printf("dcVoltage:          %i              \n", inputPDO->dcVoltage);
+    printf("digitalInput :      %i              \n",  inputPDO->digitalInput);
+    printf("analogInput :       %i              \n",  inputPDO->analogInput);
+    printf("demandPosition :    %i              \n", inputPDO->demandPosition);
 }
 
 int main(int argc, char* argv[])
@@ -76,6 +77,13 @@ int main(int argc, char* argv[])
         pelvis.input.sync_manager = 3;
         pelvis.output.bsize = 8;
         pelvis.output.sync_manager = 2;
+
+        Slave& ankle = bus.slaves().at(2);
+        ankle.is_static_mapping = true;
+        ankle.input.bsize = 114;
+        ankle.input.sync_manager = 3;
+        ankle.output.bsize = 4;
+        ankle.output.sync_manager = 2;
         
         bus.createMapping(io_buffer);
 
@@ -113,54 +121,69 @@ int main(int argc, char* argv[])
     outputPDO = reinterpret_cast<hal::pdo::elmo::Output*>(elmo.output.data);
     inputPDO = reinterpret_cast<hal::pdo::elmo::Input*>(elmo.input.data);
     can::CANOpenStateMachine stateMachine;
-    stateMachine.setCommand(can::CANOpenCommand::ENABLE);
 
+
+    //Turn on
+    stateMachine.setCommand(can::CANOpenCommand::ENABLE);
+    while(not stateMachine.isON())
+    {
+        sleep(1ms);
+        bus.sendLogicalRead(callback_error);
+        stateMachine.statusWord_ = inputPDO->statusWord;
+        stateMachine.update();
+
+        outputPDO->controlWord = stateMachine.controlWord_;
+        bus.sendLogicalWrite(callback_error);
+
+        bus.finalizeDatagrams();
+
+        bus.processAwaitingFrames();
+
+    }
+    stateMachine.printState();
+
+    // Main Loop
     int64_t last_error = 0;
-    for (int64_t i = 0; i < 30000; ++i)
+    for (int64_t i = 0; i < 20000; ++i)
     {
         sleep(1ms);
 
         try
         {
             bus.sendLogicalRead(callback_error);
-            bus.sendLogicalWrite(callback_error);
+            if (i<1000)
+            {
+                bus.sendLogicalWrite(callback_error);
+            }
+
+            bus.checkMailboxes(callback_error);
+            bus.processMessages(callback_error);
 
             bus.finalizeDatagrams();
+            printInputPDO(inputPDO);
+
+
+            printf("EMC : %i\n\n", (int) elmo.mailbox.emergencies.size());
+            if (elmo.mailbox.emergencies.size() > 0)
+            {
+                std::cout << can::emergency::codeToError(elmo.mailbox.emergencies.at(0).error_code).desc;
+                return 1;
+            }
+        
+            printf("\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F");
 
             stateMachine.statusWord_ = inputPDO->statusWord;
-            if (not stateMachine.isON() && not stateMachine.isOFF())
-            {
-                stateMachine.printState();
-            }
-            else
-            {
-                //printInputPDO(inputPDO);
-                //printf("\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F");
-            }
-
             stateMachine.update();
 
             outputPDO->controlWord = stateMachine.controlWord_;
             outputPDO->modeOfOperation = 4;
-            outputPDO->targetTorque = 30;
+            outputPDO->targetTorque = 20;
             outputPDO->maxTorque = 3990;
             outputPDO->targetPosition = 0;
-            outputPDO->velocityOffset = 10;
+            outputPDO->velocityOffset = 0;
             outputPDO->digitalOutput = 0;
 
-            bus.processAwaitingFrames();     
-
-            if (i == 5000)
-            {
-                printf("Disabling\n");
-                stateMachine.setCommand(can::CANOpenCommand::DISABLE);
-            }
-
-            if (i == 8000)
-            {
-                printf("Enabling\n");
-                stateMachine.setCommand(can::CANOpenCommand::ENABLE);
-            }
+            bus.processAwaitingFrames();
         }
         catch (std::exception const& e)
         {
@@ -169,6 +192,23 @@ int main(int argc, char* argv[])
             std::cerr << e.what() << " at " << i << " delta: " << delta << std::endl;
         }
     }
+    //Turn off
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n");
+    stateMachine.setCommand(can::CANOpenCommand::DISABLE);
+    while(stateMachine.isON())
+    {
+        bus.sendLogicalRead(callback_error);
+        bus.sendLogicalWrite(callback_error);
+
+        bus.finalizeDatagrams();
+
+        stateMachine.statusWord_ = inputPDO->statusWord;
+        stateMachine.update();
+
+        outputPDO->controlWord = stateMachine.controlWord_;
+        bus.processAwaitingFrames();
+    }
+    stateMachine.printState();
 
 
     return 0;

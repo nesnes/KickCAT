@@ -857,7 +857,7 @@ namespace kickcat
             {
                 if (wkc != 1)
                 {
-                    DEBUG_PRINT("sendReadMessages - Invalid working counter for slave %d\n", slave.address);
+                    DEBUG_PRINT("sendReadMessages - Invalid working counter for slave %d - %i vs 1\n", slave.address, wkc);
                     return DatagramState::INVALID_WKC;
                 }
 

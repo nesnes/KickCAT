@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 /// \copyright Wandercraft
 ///////////////////////////////////////////////////////////////////////////////
-#ifndef WDC_HAL_ELMO_STATE_MACHINE_H
-#define WDC_HAL_ELMO_STATE_MACHINE_H
+#ifndef CAN_ELMO_STATE_MACHINE_H
+#define CAN_ELMO_STATE_MACHINE_H
 
 #include "kickcat/Bus.h"
 #include "kickcat/Time.h"
@@ -26,7 +26,7 @@ namespace can
     {
         NONE,
         ENABLE,
-        DISABLE
+        DISABLE,
     };
 
     // status stores the possible CAN states
@@ -213,4 +213,4 @@ namespace can
     };
 }
 
-#endif // WDC_HAL_ELMO_STATE_MACHINE_H
+#endif // CAN_ELMO_STATE_MACHINE_H
