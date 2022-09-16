@@ -166,7 +166,11 @@ int main(int argc, char* argv[])
             printf("EMC : %i\n\n", (int) elmo.mailbox.emergencies.size());
             if (elmo.mailbox.emergencies.size() > 0)
             {
-                std::cout << can::emergency::codeToError(elmo.mailbox.emergencies.at(0).error_code).desc;
+                printf("Data:           %02x\n", elmo.mailbox.emergencies.at(0).data);
+                printf("Errorcode:      %04x\n", elmo.mailbox.emergencies.at(0).error_code);
+                printf("ErrorRegister:  %02x\n", elmo.mailbox.emergencies.at(0).error_register);
+                printf("Number:         %02x\n", elmo.mailbox.emergencies.at(0).number);
+                printf("Service:        %04x\n", elmo.mailbox.emergencies.at(0).service);
                 return 1;
             }
         
