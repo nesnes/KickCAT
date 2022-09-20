@@ -1,7 +1,9 @@
 #include <unordered_map>
-#include "Slave.h"
 #include <cstdint>
 #include <vector>
+
+#include "Slave.h"
+#include "Bus.h"
 
 namespace kickcat
 {

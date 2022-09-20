@@ -18,14 +18,14 @@ namespace can
             };
 
 
-            EmergencyError constexpr EMERGENCY_0000    {0x0000,  "Error Reset or No Error"};
-            EmergencyError constexpr EMERGENCY_1000    {0x1000,  "Generic Error"};
-            EmergencyError constexpr EMERGENCY_2000    {0x2000,  "Current"};
-            EmergencyError constexpr EMERGENCY_2100    {0x2100,  "Current device input side"};
-            EmergencyError constexpr EMERGENCY_2200    {0x2200,  "Current inside the device"};
-            EmergencyError constexpr EMERGENCY_2300    {0x2300,  "Current device output side"};
-            EmergencyError constexpr EMERGENCY_3000    {0x3000,  "Voltage"};
-            EmergencyError constexpr EMERGENCY_3100    {0x3100,  "Mains Voltage"};
+            EmergencyError constexpr EMERGENCY_0000    {0x0000,     "Error Reset or No Error"};
+            EmergencyError constexpr EMERGENCY_1000    {0x1000,     "Generic Error"};
+            EmergencyError constexpr EMERGENCY_2000    {0x2000,     "Current"};
+            EmergencyError constexpr EMERGENCY_2100    {0x2100,     "Current device input side"};
+            EmergencyError constexpr EMERGENCY_2200    {0x2200,     "Current inside the device"};
+            EmergencyError constexpr EMERGENCY_2300    {0x2300,     "Current device output side"};
+            EmergencyError constexpr EMERGENCY_3000    {0x3000,     "Voltage"};
+            EmergencyError constexpr EMERGENCY_3100    {0x3100,     "Mains Voltage"};
             EmergencyError constexpr EMERGENCY_3200    {0x3200, 	"Voltage inside the device"};
             EmergencyError constexpr EMERGENCY_3300    {0x3300, 	"Output Voltage"};
             EmergencyError constexpr EMERGENCY_4000    {0x4000, 	"Temperature"};
@@ -37,6 +37,7 @@ namespace can
             EmergencyError constexpr EMERGENCY_6200    {0x6200, 	"User Software"};
             EmergencyError constexpr EMERGENCY_6300    {0x6300, 	"Data Set"};
             EmergencyError constexpr EMERGENCY_7000    {0x7000, 	"Additional Modules"};
+            EmergencyError constexpr EMERGENCY_7300    {0x7300, 	"No Motor"};
             EmergencyError constexpr EMERGENCY_8000    {0x8000, 	"Monitoring"};
             EmergencyError constexpr EMERGENCY_8100    {0x8100, 	"Communication"};
             EmergencyError constexpr EMERGENCY_8110    {0x8110, 	"CAN Overrun (Objects lost)"};
@@ -80,6 +81,7 @@ namespace can
                     case 0x62: {return EMERGENCY_6200;};
                     case 0x63: {return EMERGENCY_6300;};
                     case 0x70: {return EMERGENCY_7000;};
+                    case 0x73: {return EMERGENCY_7300;};
                     case 0x80: {return EMERGENCY_8000;};
                     case 0x81: 
                     {
@@ -125,6 +127,17 @@ namespace can
             uint8_t const DEVICE_SPECIFIC           = 1U << 5;
             uint8_t const RESERVED                  = 1U << 6;
             uint8_t const MANUFACTURER_SPECIFIC     = 1U << 7;
+        }
+
+        void printErrorRegister(uint16_t const& reg)
+        {
+            if ((reg & errorRegister::GENERIC_ERROR) == errorRegister::GENERIC_ERROR) {printf("GENERIC_ERROR\n");};
+            if ((reg & errorRegister::CURRENT) == errorRegister::CURRENT) {printf("CURRENT\n");};
+            if ((reg & errorRegister::VOLTAGE) == errorRegister::VOLTAGE) {printf("VOLTAGE\n");};
+            if ((reg & errorRegister::TEMPERATURE) == errorRegister::TEMPERATURE) {printf("TEMPERATURE\n");};
+            if ((reg & errorRegister::COMMUNICATION_ERROR) == errorRegister::COMMUNICATION_ERROR) {printf("COMMUNICATION_ERROR\n");};
+            if ((reg & errorRegister::DEVICE_SPECIFIC) == errorRegister::DEVICE_SPECIFIC) {printf("DEVICE_SPECIFIC\n");};
+            if ((reg & errorRegister::MANUFACTURER_SPECIFIC) == errorRegister::MANUFACTURER_SPECIFIC) {printf("MANUFACTURER_SPECIFIC\n");};
         }
     }
 }

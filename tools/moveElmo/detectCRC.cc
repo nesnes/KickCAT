@@ -22,19 +22,59 @@ using namespace kickcat;
 
 auto callback_error = [](DatagramState const&){THROW_ERROR("Something bad happened");};
 
-void printInputPDO(hal::pdo::elmo::Input* inputPDO)
+// return child topology, organized by ports
+// 0x0000 is supposed to be first child - it means "no child" if its value appears in ports 1, 2 or 3 (it is no one's child)
+std::unordered_map<uint16_t, std::vector<uint16_t>> completeTopologyMap(std::vector<Slave>& slaves)
 {
-    printf("statusWord :        %04x            \n", inputPDO->statusWord);
-    printf("modeOfOperation :   %i              \n", inputPDO->modeOfOperationDisplay);
-    printf("actualPosition:     %i              \n", inputPDO->actualPosition);
-    printf("actualVelocity :    %i              \n", inputPDO->actualVelocity);
-    printf("demandTorque :      %i              \n", inputPDO->demandTorque);
-    printf("actualTorque :      %i              \n", inputPDO->actualTorque);  ///< Actual torque in RTU.
-    printf("dcVoltage:          %i              \n", inputPDO->dcVoltage);
-    printf("digitalInput :      %i              \n",  inputPDO->digitalInput);
-    printf("analogInput :       %i              \n",  inputPDO->analogInput);
-    printf("demandPosition :    %i              \n", inputPDO->demandPosition);
-    printf("\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F");
+    std::unordered_map<uint16_t, std::vector<uint16_t>> completeTopology;
+
+    std::unordered_map<uint16_t, uint16_t> topology = getTopology(slaves);
+    std::unordered_map<uint16_t, std::vector<int>> slaves_ports;
+    std::unordered_map<uint16_t, std::vector<uint16_t>> links;
+
+    for (auto& slave : slaves)
+    {
+        std::vector<int> ports;
+        if (slave.dl_status.PL_port0) {ports.push_back(0);};
+        if (slave.dl_status.PL_port3) {ports.push_back(3);};
+        if (slave.dl_status.PL_port1) {ports.push_back(1);};
+        if (slave.dl_status.PL_port2) {ports.push_back(2);};
+        slaves_ports[slave.address] = ports;
+
+        links[topology[slave.address]].push_back(slave.address);
+        if (slave.address != topology[slave.address]) {links[slave.address].push_back(topology[slave.address]);}
+    }
+
+    for (auto& slave : slaves)
+    {
+        completeTopology[slave.address] = {0, 0, 0, 0};
+        std::sort(links[slave.address].begin(), links[slave.address].end());
+        for (size_t i = 0; i < links[slave.address].size(); ++i)
+        {
+            completeTopology[slave.address].at(slaves_ports[slave.address][i]) = links[slave.address].at(i); 
+        }
+    }
+
+    return completeTopology;
+}
+
+void CRCAnalysis(std::vector<Slave>& slaves, bool completeReport = false)
+{
+    std::unordered_map<uint16_t, std::vector<uint16_t>> completeTopology = completeTopologyMap(slaves);
+    uint16_t first_error = 0;
+    uint16_t error_port = 0xFF;
+
+    for (auto port = 0; port < 4; ++port)
+    {
+        for (uint16_t slave_id = 0; slave_id < (uint16_t) slaves.size(); ++slave_id)
+        {
+            if (slaves.at(slave_id).error_counters.rx[port].physical_layer > 0)
+            {
+                printf("CRC Error detected between 0x%04x and 0x%04x - Received by 0x%04x at Port_%i\n", slave_id, completeTopology[slave_id][port], slave_id, port);
+                if (not completeReport) {return;}
+            }
+        }
+    }
 }
 
 int main(int argc, char* argv[])
@@ -96,12 +136,21 @@ int main(int argc, char* argv[])
 
         auto callback_error = [](DatagramState const&){ THROW_ERROR("something bad happened"); };
         bus.processDataRead(callback_error);
-        auto itWillBeWrong = [](DatagramState const&){DEBUG_PRINT("Previous error was a false alarm\n");};
+        auto itWillBeWrong = [](DatagramState const&){printf("(Previous line was a False alarm) \n");};
         bus.processDataWrite(itWillBeWrong);
 
         bus.requestState(State::OPERATIONAL);
         bus.waitForState(State::OPERATIONAL, 100ms);
         print_current_state();
+
+        for (auto& slave : bus.slaves())
+        {
+            bus.sendGetDLStatus(slave);
+            bus.finalizeDatagrams();
+
+            printDLStatus(slave);
+            printf("  Open ports : %i\n",slave.countOpenPorts());
+        }
     }
     catch (ErrorCode const& e)
     {
@@ -113,6 +162,8 @@ int main(int argc, char* argv[])
         std::cerr << e.what() << std::endl;
         return 1;
     }
+
+    std::unordered_map<uint16_t, uint16_t> topology = getTopology(bus.slaves());
 
 
 
@@ -128,7 +179,7 @@ int main(int argc, char* argv[])
     stateMachine.setCommand(can::CANOpenCommand::ENABLE);
     while(not stateMachine.isON())
     {
-        sleep(2ms);
+        sleep(1ms);
         bus.sendLogicalRead(callback_error);
         bus.finalizeDatagrams();
         bus.processAwaitingFrames();
@@ -144,7 +195,7 @@ int main(int argc, char* argv[])
 
     // Main Loop
     int64_t last_error = 0;
-    for (int64_t i = 0; i < 8000; ++i)
+    for (int64_t i = 0; i < 5000; ++i)
     {
         sleep(1ms);
 
@@ -152,6 +203,10 @@ int main(int argc, char* argv[])
         {
             bus.sendLogicalRead(callback_error);
             bus.sendLogicalWrite(callback_error);
+
+            bus.sendRefreshErrorCounters(callback_error);
+            bus.finalizeDatagrams();
+            CRCAnalysis(bus.slaves());
 
             stateMachine.statusWord_ = inputPDO->statusWord;
             stateMachine.update();
@@ -165,8 +220,6 @@ int main(int argc, char* argv[])
             outputPDO->digitalOutput = 0;
 
             bus.processAwaitingFrames();
-
-            printInputPDO(inputPDO);
         }
         catch (std::exception const& e)
         {
@@ -176,7 +229,7 @@ int main(int argc, char* argv[])
         }
     }
     //Turn off
-    printf("\n\n\n\n\n\n\n\n\n\n\n\n");
+    //printf("\n\n\n\n\n\n\n\n\n\n\n\n");
     stateMachine.setCommand(can::CANOpenCommand::DISABLE);
     while(stateMachine.isON())
     {

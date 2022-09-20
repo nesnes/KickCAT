@@ -22,21 +22,6 @@ using namespace kickcat;
 
 auto callback_error = [](DatagramState const&){THROW_ERROR("Something bad happened");};
 
-void printInputPDO(hal::pdo::elmo::Input* inputPDO)
-{
-    printf("statusWord :        %04x            \n", inputPDO->statusWord);
-    printf("modeOfOperation :   %i              \n", inputPDO->modeOfOperationDisplay);
-    printf("actualPosition:     %i              \n", inputPDO->actualPosition);
-    printf("actualVelocity :    %i              \n", inputPDO->actualVelocity);
-    printf("demandTorque :      %i              \n", inputPDO->demandTorque);
-    printf("actualTorque :      %i              \n", inputPDO->actualTorque);  ///< Actual torque in RTU.
-    printf("dcVoltage:          %i              \n", inputPDO->dcVoltage);
-    printf("digitalInput :      %i              \n",  inputPDO->digitalInput);
-    printf("analogInput :       %i              \n",  inputPDO->analogInput);
-    printf("demandPosition :    %i              \n", inputPDO->demandPosition);
-    printf("\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F");
-}
-
 int main(int argc, char* argv[])
 {
     auto socket = std::make_shared<Socket>();
@@ -152,9 +137,16 @@ int main(int argc, char* argv[])
         {
             bus.sendLogicalRead(callback_error);
             bus.sendLogicalWrite(callback_error);
+            bus.checkMailboxes(callback_error);
+            bus.sendReadMessages(callback_error);
 
             stateMachine.statusWord_ = inputPDO->statusWord;
             stateMachine.update();
+            for (auto& em : elmo.mailbox.emergencies)
+            {
+                auto error = can::emergency::errorCode::codeToError(em.error_code);
+                printf("Error 0x%04x - %s\n", error.code, error.desc);
+            }
 
             outputPDO->controlWord = stateMachine.controlWord_;
             outputPDO->modeOfOperation = 4;
@@ -165,8 +157,6 @@ int main(int argc, char* argv[])
             outputPDO->digitalOutput = 0;
 
             bus.processAwaitingFrames();
-
-            printInputPDO(inputPDO);
         }
         catch (std::exception const& e)
         {
