@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
         bus.init();
 
 
-        Slave& elmo = bus.slaves().at(1);
+        Slave& elmo = bus.slaves().at(0);
 
         printInfo(elmo);
 
@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
         uint32_t Tx_length = sizeof(hal::pdo::elmo::TxMapping);
         bus.writeSDO(elmo, hal::sdo::elmo::TxPDO.index, hal::sdo::elmo::TxPDO.subindex, Bus::Access::COMPLETE, (void*) hal::pdo::elmo::TxMapping, Tx_length);
         
-        Slave& pelvis = bus.slaves().at(0);
+        /*Slave& pelvis = bus.slaves().at(0);
         pelvis.is_static_mapping = true;
         pelvis.input.bsize = 356;
         pelvis.input.sync_manager = 3;
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
         ankle.input.bsize = 114;
         ankle.input.sync_manager = 3;
         ankle.output.bsize = 4;
-        ankle.output.sync_manager = 2;
+        ankle.output.sync_manager = 2; */
         
         bus.createMapping(io_buffer);
 
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
 
 
 
-    Slave& elmo = bus.slaves().at(1);
+    Slave& elmo = bus.slaves().at(0);
     hal::pdo::elmo::Input* inputPDO {nullptr};
     hal::pdo::elmo::Output* outputPDO {nullptr};
     outputPDO = reinterpret_cast<hal::pdo::elmo::Output*>(elmo.output.data);
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
 
             outputPDO->controlWord = stateMachine.controlWord_;
             outputPDO->modeOfOperation = 4;
-            outputPDO->targetTorque = 10;
+            outputPDO->targetTorque = 50;
             outputPDO->maxTorque = 3990;
             outputPDO->targetPosition = 0;
             outputPDO->velocityOffset = 0;
