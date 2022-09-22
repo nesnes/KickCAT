@@ -10,109 +10,50 @@ namespace can
     {
         namespace errorCode
         {
-            
-            struct EmergencyError
+            char const* codeToError(uint16_t const& code)
             {
-                uint16_t code;
-                char const* desc{""};
-            };
-
-
-            EmergencyError constexpr EMERGENCY_0000    {0x0000,     "Error Reset or No Error"};
-            EmergencyError constexpr EMERGENCY_1000    {0x1000,     "Generic Error"};
-            EmergencyError constexpr EMERGENCY_2000    {0x2000,     "Current"};
-            EmergencyError constexpr EMERGENCY_2100    {0x2100,     "Current device input side"};
-            EmergencyError constexpr EMERGENCY_2200    {0x2200,     "Current inside the device"};
-            EmergencyError constexpr EMERGENCY_2300    {0x2300,     "Current device output side"};
-            EmergencyError constexpr EMERGENCY_3000    {0x3000,     "Voltage"};
-            EmergencyError constexpr EMERGENCY_3100    {0x3100,     "Mains Voltage"};
-            EmergencyError constexpr EMERGENCY_3200    {0x3200, 	"Voltage inside the device"};
-            EmergencyError constexpr EMERGENCY_3300    {0x3300, 	"Output Voltage"};
-            EmergencyError constexpr EMERGENCY_4000    {0x4000, 	"Temperature"};
-            EmergencyError constexpr EMERGENCY_4100    {0x4100, 	"Ambient Temperature"};
-            EmergencyError constexpr EMERGENCY_4200    {0x4200, 	"Device Temperature"};
-            EmergencyError constexpr EMERGENCY_5000    {0x5000, 	"Device Hardware"};
-            EmergencyError constexpr EMERGENCY_6000    {0x6000, 	"Device Software"};
-            EmergencyError constexpr EMERGENCY_6100    {0x6100, 	"Internal Software"};
-            EmergencyError constexpr EMERGENCY_6200    {0x6200, 	"User Software"};
-            EmergencyError constexpr EMERGENCY_6300    {0x6300, 	"Data Set"};
-            EmergencyError constexpr EMERGENCY_7000    {0x7000, 	"Additional Modules"};
-            EmergencyError constexpr EMERGENCY_7300    {0x7300, 	"No Motor"};
-            EmergencyError constexpr EMERGENCY_8000    {0x8000, 	"Monitoring"};
-            EmergencyError constexpr EMERGENCY_8100    {0x8100, 	"Communication"};
-            EmergencyError constexpr EMERGENCY_8110    {0x8110, 	"CAN Overrun (Objects lost)"};
-            EmergencyError constexpr EMERGENCY_8120    {0x8120, 	"CAN in Error Passive Mode"};
-            EmergencyError constexpr EMERGENCY_8130    {0x8130, 	"Life Guard Error or Heartbeat Error"};
-            EmergencyError constexpr EMERGENCY_8140    {0x8140, 	"recovered from bus off"};
-            EmergencyError constexpr EMERGENCY_8150    {0x8150, 	"CAN-ID collision"};
-            EmergencyError constexpr EMERGENCY_8200    {0x8200, 	"Protocol Error"};
-            EmergencyError constexpr EMERGENCY_8210    {0x8210, 	"PDO not processed due to length error"};
-            EmergencyError constexpr EMERGENCY_8220    {0x8220, 	"PDO length exceeded"};
-            EmergencyError constexpr EMERGENCY_8230    {0x8230, 	"DAM MPDO not processed destination object not available"};
-            EmergencyError constexpr EMERGENCY_8240    {0x8240, 	"Unexpected SYNC data length"};
-            EmergencyError constexpr EMERGENCY_8250    {0x8250, 	"RPDO timeout"};
-            EmergencyError constexpr EMERGENCY_9000    {0x9000, 	"External Error"};
-            EmergencyError constexpr EMERGENCY_F000    {0xF000, 	"Additional Functions"};
-            EmergencyError constexpr EMERGENCY_FF00    {0xFF00, 	"Device specific"};
-
-            EmergencyError codeToError(uint16_t const& code)
-            {
-                uint8_t head = code/0x0100;
-                uint8_t tail = code%0x0100;
-
-                switch (head)
+                switch (code)
                 {
-                    case 0x00: {return EMERGENCY_0000;};
-                    case 0x10: {return EMERGENCY_1000;};
-                    case 0x20: {return EMERGENCY_2000;};
-                    case 0x21: {return EMERGENCY_2100;};
-                    case 0x22: {return EMERGENCY_2200;};
-                    case 0x23: {return EMERGENCY_2300;};
-                    case 0x30: {return EMERGENCY_3000;};
-                    case 0x31: {return EMERGENCY_3100;};
-                    case 0x32: {return EMERGENCY_3200;};
-                    case 0x33: {return EMERGENCY_3300;};
-                    case 0x40: {return EMERGENCY_4000;};
-                    case 0x41: {return EMERGENCY_4100;};
-                    case 0x42: {return EMERGENCY_4200;};
-                    case 0x50: {return EMERGENCY_5000;};
-                    case 0x60: {return EMERGENCY_6000;};
-                    case 0x61: {return EMERGENCY_6100;};
-                    case 0x62: {return EMERGENCY_6200;};
-                    case 0x63: {return EMERGENCY_6300;};
-                    case 0x70: {return EMERGENCY_7000;};
-                    case 0x73: {return EMERGENCY_7300;};
-                    case 0x80: {return EMERGENCY_8000;};
-                    case 0x81: 
-                    {
-                        switch (tail)
-                        {
-                            case 0x10: {return EMERGENCY_8110;};
-                            case 0x20: {return EMERGENCY_8120;};
-                            case 0x30: {return EMERGENCY_8130;};
-                            case 0x40: {return EMERGENCY_8140;};
-                            case 0x50: {return EMERGENCY_8150;};
-                            default: {return EMERGENCY_8100;}
-                        };
-                        break;
-                    };
-                    case 0x82:
-                    {
-                        switch (tail)
-                        {
-                            case 0x10: {return EMERGENCY_8210;};
-                            case 0x20: {return EMERGENCY_8220;};
-                            case 0x30: {return EMERGENCY_8230;};
-                            case 0x40: {return EMERGENCY_8240;};
-                            case 0x50: {return EMERGENCY_8250;};
-                            default: {return EMERGENCY_8200;}
-                        };
-                        break;
-                    };
-                    case 0x90: {return EMERGENCY_9000;};
-                    case 0xF0: {return EMERGENCY_F000;};
-                    case 0xFF: {return EMERGENCY_FF00;};
-                    default: {return {code, "Unknown error"};};
+                    // General messages
+                    case 0x6180 : {return "Fatal CPU error: stack overflow\n";}
+                    case 0x6200 : {return "User program aborted by an error\n";}
+                    case 0x6300 : {return "Object mapped to an RPDO returned an error during interpretation or a referenced motion failed to be performed\n";}
+                    case 0x8110 : {return "CAN message lost (corrupted or overrun\n";}
+                    case 0x8130 : {return "Heartbeat event\n";}
+                    case 0x8200 : {return "Protocol error (unrecognized network management [state machine] request\n";}
+                    case 0x8210 : {return "Attempt to access an unconfigured RPDO\n";}
+                    case 0xFF01 : {return "Request by user program “emit” function\n";}
+                    case 0xFF02 : {return "DS 402 IP Underflow \n";}
+
+                    //Motor fault
+                    case 0x3120 : {return "Under-voltage: power supply is shut down or it has too high an output impedance\n";}
+                    case 0x2340 : {return "Short circuit: motor or its wiring may be defective, or drive is faulty\n";}
+                    case 0x3310 : {return "Over-voltage: power-supply voltage is too high or servo drive could not absorb kinetic energy while braking a load. A shunt resistor may be required\n";}
+                    case 0x4310 : {return "Temperature: drive overheating. The environment is too hot or heat removal is not efficient. Could be due to large thermal resistance between drive and its mounting\n";}
+                    case 0x5280 : {return "ECAM table problem\n";}
+                    case 0x5281 : {return "Timing Error\n";}
+                    case 0x5400 : {return "Cannot start motor\n";} // Another one
+                    case 0x5441 : {return "Disabled by Limit switch\n";}
+                    case 0x6181 : {return "CPU exception: fatal exception\n";}
+                    case 0x6320 : {return "Cannot start due to inconsistent database\n";}
+                    case 0x7121 : {return "Motor stuck: motor powered but not moving\n";}
+                    case 0x7300 : {return "Resolver or Analog Encoder feedback failed\n";}
+                    case 0x7381 : {return "Two digital Hall sensors changed at once; only one sensor can be changed at a time\n";}
+                    case 0x8311 : {return "Peak current has been exceeded due to Drive malfunction or Badly-tuned current controller\n";}
+                    case 0x8380 : {return "Cannot find electrical zero of motor when attempting to start motor with an incremental encoder and no digital Hall sensors. Applied motor current may not suffice for moving motor from its place\n";}
+                    case 0x8381 : {return "Cannot tune current offsets\n";}
+                    case 0x8480 : {return "Speed tracking error : exceeded speed error limit, due to Bad tuning of speed controller / Too tight a speed-error tolerance / Inability of motor to accelerate to required speed because line voltage is too low, or motor is not powerful enough\n";}
+                    case 0x8481 : {return "Speed limit exceeded\n";}
+                    case 0x8611 : {return "Position tracking error : exceeded position error limit ER[3], due to Bad tuning of position or speed controller / Too tight a position error tolerance / Abnormal motor load, a mechanical limit reached\n";}
+                    case 0x8680 : {return "Position limit exceeded\n";}
+                    case 0xFF10 : {return "Cannot start motor\n";}
+                    
+                    // Wandercode
+                    case 0xFF20 : {return "FTO error\n";}
+                    case 0x7380 : {return "Feedback loss\n";}
+                    case 0x7100 : {return "Error 7100\n";}
+                    
+                    default : {return "Unknown error\n";}
                 }
             }
         };
@@ -141,11 +82,5 @@ namespace can
         }
     }
 }
-
-
-
-
-
-
 
 #endif

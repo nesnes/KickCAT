@@ -124,6 +124,12 @@ int main(int argc, char* argv[])
         outputPDO->controlWord = stateMachine.controlWord_;
         bus.sendLogicalWrite(callback_error);
 
+        for (auto& em : elmo.mailbox.emergencies)
+            {
+                std::cout << can::emergency::errorCode::codeToError(em.error_code);
+            }
+            elmo.mailbox.emergencies.resize(0);
+
     }
     stateMachine.printState();
 
@@ -137,20 +143,18 @@ int main(int argc, char* argv[])
         {
             bus.sendLogicalRead(callback_error);
             bus.sendLogicalWrite(callback_error);
-            bus.checkMailboxes(callback_error);
-            bus.sendReadMessages(callback_error);
 
             stateMachine.statusWord_ = inputPDO->statusWord;
             stateMachine.update();
             for (auto& em : elmo.mailbox.emergencies)
             {
-                auto error = can::emergency::errorCode::codeToError(em.error_code);
-                printf("Error 0x%04x - %s\n", error.code, error.desc);
+                std::cout << can::emergency::errorCode::codeToError(em.error_code);
             }
+            elmo.mailbox.emergencies.resize(0);
 
             outputPDO->controlWord = stateMachine.controlWord_;
             outputPDO->modeOfOperation = 4;
-            outputPDO->targetTorque = 10;
+            outputPDO->targetTorque = 30;
             outputPDO->maxTorque = 3990;
             outputPDO->targetPosition = 0;
             outputPDO->velocityOffset = 0;

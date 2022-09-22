@@ -35,10 +35,36 @@ std::unordered_map<uint16_t, std::vector<uint16_t>> completeTopologyMap(std::vec
     for (auto& slave : slaves)
     {
         std::vector<int> ports;
-        if (slave.dl_status.PL_port0) {ports.push_back(0);};
-        if (slave.dl_status.PL_port3) {ports.push_back(3);};
-        if (slave.dl_status.PL_port1) {ports.push_back(1);};
-        if (slave.dl_status.PL_port2) {ports.push_back(2);};
+        switch (slave.countOpenPorts())
+        {
+            case 1:
+            {
+                ports.push_back(0);
+            }
+            case 2:
+            {
+                ports.push_back(0);
+                ports.push_back(1);
+            }
+            case 3:
+            {
+                ports.push_back(0);
+                if (slave.dl_status.PL_port3) {ports.push_back(3);};
+                if (slave.dl_status.PL_port1) {ports.push_back(1);};
+                if (slave.dl_status.PL_port2) {ports.push_back(2);};
+            }
+            case 4:
+            {
+                ports.push_back(0);
+                ports.push_back(3);
+                ports.push_back(1);
+                ports.push_back(2);
+            }
+            default:
+            {
+                DEBUG_PRINT("Error in ports order");
+            }
+        }
         slaves_ports[slave.address] = ports;
 
         links[topology[slave.address]].push_back(slave.address);
@@ -197,7 +223,7 @@ int main(int argc, char* argv[])
     int64_t last_error = 0;
     for (int64_t i = 0; i < 5000; ++i)
     {
-        sleep(1ms);
+        //sleep(1ms);
 
         try
         {
@@ -233,6 +259,7 @@ int main(int argc, char* argv[])
     stateMachine.setCommand(can::CANOpenCommand::DISABLE);
     while(stateMachine.isON())
     {
+        
         bus.sendLogicalRead(callback_error);
         bus.finalizeDatagrams();
 
